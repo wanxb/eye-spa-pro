@@ -69,7 +69,8 @@ eye-spa-pro/
 │   └── style.css       # 沉浸式 UI 样式
 ├── js/
 │   └── script.js       # 视觉引导算法逻辑
-├── assets/             # 静态资源
+├── image/
+│   └── icon.png        # 项目图标
 └── README.md           # 项目文档
 
 ```
