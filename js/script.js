@@ -5,46 +5,80 @@ const quotes = [
     "你的眼睛值得这三分钟的宁静。"
 ];
 
-async function initExercise() {
-    const stage = document.getElementById('stage');
-    const header = document.getElementById('header');
-    const ball = document.getElementById('ball');
-    const progressBox = document.querySelector('.progress-container');
-    const progressBar = document.getElementById('progress-bar');
-    const hint = document.getElementById('hint');
+// --------------------
+// sound toggle and helpers
+let soundEnabled = true; // user may toggle by clicking indicator
 
-    // prepare audio beep function
-    const playBeep = () => {
-        try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.value = 600;
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            gain.gain.setValueAtTime(0.1, ctx.currentTime);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.1);
-        } catch (e) {
-            // fallback: no audio support
-            console.warn('beep failed', e);
-        }
-    };
+function updateSoundIndicator() {
+    const el = document.getElementById('sound-indicator');
+    if (!el) return;
+    if (soundEnabled) {
+        el.textContent = '🔊 声音提醒已开启';
+        el.classList.remove('muted');
+    } else {
+        el.textContent = '🔇 声音提醒已关闭';
+        el.classList.add('muted');
+    }
+}
+
+// helper for beep, respects soundEnabled
+const playBeep = () => {
+    if (!soundEnabled) return;
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 600;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.1);
+    } catch (e) {
+        // fallback: no audio support
+        console.warn('beep failed', e);
+    }
+};
 
     // text-to-speech guidance (uses Web Speech API)
-    const speak = (text) => {
-        if ('speechSynthesis' in window) {
-            const utter = new SpeechSynthesisUtterance(text);
-            utter.lang = 'zh-CN';
-            utter.rate = 0.8; // slower than normal
-            window.speechSynthesis.cancel();
-            window.speechSynthesis.speak(utter);
-        }
-    };
+const speak = (text) => {
+    if (!soundEnabled) return;
+    if ('speechSynthesis' in window) {
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'zh-CN';
+        utter.rate = 0.8; // slower than normal
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utter);
+    }
+};
 
-    header.style.display = 'none';
-    stage.style.display = 'block';
+// initialize indicator state on load
+window.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('sound-indicator');
+    if (el) {
+        // hide if neither audio nor speech available
+        if (!('AudioContext' in window || 'webkitAudioContext' in window) && !('speechSynthesis' in window)) {
+            el.classList.add('hidden');
+        }
+        el.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            updateSoundIndicator();
+        });
+        updateSoundIndicator();
+    }
+});
+
+    async function initExercise() {
+        const stage = document.getElementById('stage');
+        const header = document.getElementById('header');
+        const ball = document.getElementById('ball');
+        const progressBox = document.querySelector('.progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const hint = document.getElementById('hint');
+
+        header.style.display = 'none';
+        stage.style.display = 'block';
     progressBox.style.display = 'block';
     // force a reflow so that the new styles take effect immediately
     document.body.offsetHeight;
